@@ -1,0 +1,9 @@
+$content = @"
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+data/processed/
+models/*.pkl
+"@
+Set-Content -Path ML_TUTOR_AI/.gitignore -Value $content
