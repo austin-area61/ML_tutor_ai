@@ -1,28 +1,50 @@
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+import os
+from sklearn.preprocessing import StandardScaler
+from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder
 
 def main():
-    # Load data
-    data = pd.read_csv('data/raw/example_data.csv')
-
-    # Display the first few rows of the dataset
-    print(data.head())
-
-    # Convert categorical data to numerical data
-    label_encoder = LabelEncoder()
-
-    data['topic'] = label_encoder.fit_transform(data['topic'])
-    data['correct_answer'] = label_encoder.fit_transform(data['correct_answer'])
-    data['student_answer'] = label_encoder.fit_transform(data['student_answer'])
-
-    # Convert 'answer_options' to a numerical format (e.g., one-hot encoding)
-    answer_options = data['answer_options'].str.get_dummies(sep=', ')
-    data = pd.concat([data, answer_options], axis=1).drop(columns=['answer_options'])
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    raw_data_path = os.path.join(script_dir, '../../data/raw/example_data.csv')
     
-    # Save preprocessed data to a new CSV file
-    data.to_csv('data/processed/processed_data.csv', index=False)
-
-    print("Data preprocessing complete. Processed data saved to 'data/processed/processed_data.csv'.")
+    # Load data
+    data = pd.read_csv(raw_data_path)
+    
+    # Separate features into numeric and categorical
+    numeric_features = data.select_dtypes(include=['int64', 'float64']).columns
+    categorical_features = data.select_dtypes(include=['object']).columns
+    
+    # Define preprocessing for numeric columns (impute missing values and scale)
+    numeric_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='mean')),
+        ('scaler', StandardScaler())
+    ])
+    
+    # Define preprocessing for categorical columns (impute missing values and one-hot encode)
+    categorical_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='most_frequent')),
+        ('onehot', OneHotEncoder(handle_unknown='ignore'))
+    ])
+    
+    # Combine preprocessing steps
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', numeric_transformer, numeric_features),
+            ('cat', categorical_transformer, categorical_features)
+        ])
+    
+    # Apply transformations
+    data_processed = preprocessor.fit_transform(data)
+    
+    # Convert to DataFrame (optional)
+    data_processed_df = pd.DataFrame(data_processed, columns=numeric_features.tolist() + preprocessor.named_transformers_['cat']['onehot'].get_feature_names_out().tolist())
+    
+    # Save processed data
+    processed_data_path = os.path.join(script_dir, '../../data/processed/processed_data.csv')
+    data_processed_df.to_csv(processed_data_path, index=False)
 
 if __name__ == "__main__":
     main()
