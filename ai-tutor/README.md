@@ -1,4 +1,3 @@
-$content = @"
 # AI Tutor for Kenyan High School Students
 
 ## Project Overview
@@ -42,5 +41,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Global Partnership for Education](https://www.globalpartnership.org)
 - [UNICEF Kenya](https://www.unicef.org/kenya/education)
 - [Kenyayote](https://kenyayote.com)
-"@
-Set-Content -Path ai-tutor/README.md -Value $content
