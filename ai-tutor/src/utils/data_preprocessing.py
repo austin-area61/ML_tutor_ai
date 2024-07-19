@@ -1,50 +1,37 @@
 import pandas as pd
+import numpy as np
+from sklearn.preprocessing import LabelEncoder
 import os
-from sklearn.preprocessing import StandardScaler
-from sklearn.impute import SimpleImputer
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
 
-def main():
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    raw_data_path = os.path.join(script_dir, '../../data/raw/example_data.csv')
+def preprocess_data(input_file, output_file, threshold=5):
+    # Load the data
+    data = pd.read_csv(input_file)
     
-    # Load data
-    data = pd.read_csv(raw_data_path)
+    # Filter for poorly answered questions based on threshold
+    poorly_answered = data[data['incorrect_count'] > threshold]
     
-    # Separate features into numeric and categorical
-    numeric_features = data.select_dtypes(include=['int64', 'float64']).columns
-    categorical_features = data.select_dtypes(include=['object']).columns
+    # Select relevant columns
+    features = poorly_answered[['question_text', 'incorrect_answer']]
+    labels = poorly_answered['correct_answer']
     
-    # Define preprocessing for numeric columns (impute missing values and scale)
-    numeric_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='mean')),
-        ('scaler', StandardScaler())
-    ])
+    # Encode text data
+    le_question = LabelEncoder()
+    le_answer = LabelEncoder()
+    features['question_text_encoded'] = le_question.fit_transform(features['question_text'])
+    features['incorrect_answer_encoded'] = le_answer.fit_transform(features['incorrect_answer'])
     
-    # Define preprocessing for categorical columns (impute missing values and one-hot encode)
-    categorical_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='most_frequent')),
-        ('onehot', OneHotEncoder(handle_unknown='ignore'))
-    ])
+    # Combine encoded features and labels
+    processed_data = pd.concat([features[['question_text_encoded', 'incorrect_answer_encoded']], labels], axis=1)
     
-    # Combine preprocessing steps
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('num', numeric_transformer, numeric_features),
-            ('cat', categorical_transformer, categorical_features)
-        ])
-    
-    # Apply transformations
-    data_processed = preprocessor.fit_transform(data)
-    
-    # Convert to DataFrame (optional)
-    data_processed_df = pd.DataFrame(data_processed, columns=numeric_features.tolist() + preprocessor.named_transformers_['cat']['onehot'].get_feature_names_out().tolist())
-    
-    # Save processed data
-    processed_data_path = os.path.join(script_dir, '../../data/processed/processed_data.csv')
-    data_processed_df.to_csv(processed_data_path, index=False)
+    # Save the processed data
+    processed_data.to_csv(output_file, index=False)
+    print(f"Processed data saved to {output_file}")
 
 if __name__ == "__main__":
-    main()
+    # Define absolute paths
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    input_file = os.path.join(base_dir, '../../data/raw/example_data.csv')
+    output_file = os.path.join(base_dir, '../../data/processed/processed_data.csv')
+    
+    # Run preprocessing with a threshold value
+    preprocess_data(input_file, output_file, threshold=5)

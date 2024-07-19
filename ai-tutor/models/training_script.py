@@ -1,40 +1,32 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, classification_report
 import joblib
-import os
 
-def main():
-    # Load the preprocessed data
-    data = pd.read_csv('ai-tutor/data/processed/processed_data.csv')
-
-    # Define feature columns and target column
-    feature_columns = ['student_id', 'topic', 'answer_options']
-    target_column = 'correct'
-
-    # Split data into features and target
-    X = data[feature_columns]
-    y = data[target_column]
-
-    # Further split into training and test sets
+def train_model(data_file, model_file):
+    # Load the data
+    data = pd.read_csv(data_file)
+    
+    # Split the data into features and labels
+    X = data[['question_text_encoded', 'incorrect_answer_encoded']]
+    y = data['correct_answer']
+    
+    # Split into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    # Train a RandomForest model
+    
+    # Train the model
     model = RandomForestClassifier(n_estimators=100, random_state=42)
     model.fit(X_train, y_train)
-
-    # Make predictions on the test set
+    
+    # Evaluate the model
     y_pred = model.predict(X_test)
-
-    # Calculate and print accuracy
-    accuracy = accuracy_score(y_test, y_pred)
-    print(f"Model accuracy: {accuracy}")
-
-    # Save the trained model
-    if not os.path.exists('ai-tutor/models'):
-        os.makedirs('ai-tutor/models')
-    joblib.dump(model, 'ai-tutor/models/tutor_model.joblib')
+    print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
+    print(classification_report(y_test, y_pred))
+    
+    # Save the model
+    joblib.dump(model, model_file)
+    print(f"Model saved to {model_file}")
 
 if __name__ == "__main__":
-    main()
+    train_model('data/processed/processed_data.csv', 'models/tutor_model.pkl')
