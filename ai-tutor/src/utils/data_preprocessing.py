@@ -7,6 +7,13 @@ def preprocess_data(input_file, output_file, threshold=5):
     # Load the data
     data = pd.read_csv(input_file)
     
+    # Print column names for debugging purposes
+    print("Columns in the dataset:", data.columns)
+    
+    # Check if 'incorrect_count' exists
+    if 'incorrect_count' not in data.columns:
+        raise KeyError("'incorrect_count' column not found in the dataset")
+    
     # Filter for poorly answered questions based on threshold
     poorly_answered = data[data['incorrect_count'] > threshold]
     
