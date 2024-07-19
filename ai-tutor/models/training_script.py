@@ -1,32 +1,45 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report
-import joblib
+import os
 
-def train_model(data_file, model_file):
-    # Load the data
-    data = pd.read_csv(data_file)
+def train_model(input_file):
+    # Print the path for debugging
+    print(f"Loading data from: {input_file}")
     
-    # Split the data into features and labels
+    # Load the processed data
+    data = pd.read_csv(input_file)
+    
+    # Separate features and labels
     X = data[['question_text_encoded', 'incorrect_answer_encoded']]
     y = data['correct_answer']
     
-    # Split into training and testing sets
+    # Split the data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    # Train the model
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    # Initialize and train the model
+    model = LogisticRegression()
     model.fit(X_train, y_train)
     
-    # Evaluate the model
+    # Make predictions
     y_pred = model.predict(X_test)
-    print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
-    print(classification_report(y_test, y_pred))
     
-    # Save the model
-    joblib.dump(model, model_file)
-    print(f"Model saved to {model_file}")
+    # Evaluate the model
+    accuracy = accuracy_score(y_test, y_pred)
+    report = classification_report(y_test, y_pred)
+    
+    print(f"Model Accuracy: {accuracy}")
+    print(f"Classification Report:\n{report}")
+
+    return model
 
 if __name__ == "__main__":
-    train_model('data/processed/processed_data.csv', 'models/tutor_model.pkl')
+    # Define the absolute path to the processed data
+    input_file = 'C:/Users/AUSTIN/ML_tutor_ai/data/processed/processed_data.csv'
+    
+    # Print the absolute path for debugging
+    print(f"Absolute path to the processed data: {input_file}")
+    
+    # Train the model
+    train_model(input_file)
