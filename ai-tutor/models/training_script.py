@@ -1,8 +1,12 @@
+import os
+import sys
+
+sys.path.append(os.path.join(os.getcwd(), 'ai-tutor'))
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
-import os
 import pickle
 from src.utils.openai import generate_feedback, get_student_history, generate_personalized_feedback
 
