@@ -1,45 +1,32 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score
 import os
+import pickle
+from src.utils.openai import generate_feedback, get_student_history, generate_personalized_feedback
 
 def train_model(input_file):
-    # Print the path for debugging
-    print(f"Loading data from: {input_file}")
-    
-    # Load the processed data
     data = pd.read_csv(input_file)
-    
-    # Separate features and labels
-    X = data[['question_text_encoded', 'incorrect_answer_encoded']]
-    y = data['correct_answer']
-    
-    # Split the data into training and testing sets
+    # Prepare data for training
+    X = data.drop(columns=['student_id', 'response', 'expected_answer', 'feedback'])
+    y = data['feedback']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    
-    # Initialize and train the model
     model = LogisticRegression()
     model.fit(X_train, y_train)
-    
-    # Make predictions
-    y_pred = model.predict(X_test)
-    
-    # Evaluate the model
-    accuracy = accuracy_score(y_test, y_pred)
-    report = classification_report(y_test, y_pred)
-    
-    print(f"Model Accuracy: {accuracy}")
-    print(f"Classification Report:\n{report}")
+    predictions = model.predict(X_test)
+    accuracy = accuracy_score(y_test, predictions)
+    print(f'Model Accuracy: {accuracy}')
+    model_path = os.path.join(os.getcwd(), 'models', 'feedback_model.pkl')
+    with open(model_path, 'wb') as f:
+        pickle.dump(model, f)
 
-    return model
+    # Generate feedback using OpenAI API for a sample student response
+    sample_response = "This is a sample student response."
+    expected_answer = "This is the expected answer."
+    feedback = generate_feedback(sample_response, expected_answer)
+    print(f'Generated Feedback: {feedback}')
 
 if __name__ == "__main__":
-    # Define the absolute path to the processed data
-    input_file = 'C:/Users/AUSTIN/ML_tutor_ai/data/processed/processed_data.csv'
-    
-    # Print the absolute path for debugging
-    print(f"Absolute path to the processed data: {input_file}")
-    
-    # Train the model
+    input_file = os.path.join(os.getcwd(), 'data', 'processed', 'processed_data.csv')
     train_model(input_file)
